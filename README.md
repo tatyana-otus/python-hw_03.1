@@ -1,5 +1,5 @@
 # Scoring API Tests
 ## Usage
 ```
-python3 ./test.py -v
+python3 -m unittest discover -s tests
 ```

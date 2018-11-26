@@ -14,8 +14,8 @@ from datetime import datetime
 from collections import defaultdict
 from itertools import chain
 
-import scoring
-import store
+from api import scoring
+from api import store
 
 SALT = "Otus"
 ADMIN_LOGIN = "admin"
@@ -304,7 +304,7 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
     router = {
         "method": method_handler
     }
-    store = store.Store(**redis_config)
+    store = store.Store(redis_config)
 
     def get_request_id(self, headers):
         return headers.get('HTTP_X_REQUEST_ID', uuid.uuid4().hex)
