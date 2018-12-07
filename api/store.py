@@ -29,22 +29,19 @@ class Store:
         self.connect_to_db()
 
     def cache_get(self, key):
-        if self.db is None:
-            return None
         data = None
         try:
+            if self.db is None:
+                self.connect()
             data = self.read_from_db(key)
         except ConnectionError as e:
             logging.error("Connection error: {}".format(e))
-        try:
-            return float(data)
-        except (ValueError, TypeError):
-            return data
+        return data
 
     def cache_set(self, key, value, ttl_sec):
-        if self.db is None:
-            return
         try:
+            if self.db is None:
+                self.connect()
             self.write_from_db(key, value, nx=ttl_sec)
         except ConnectionError as e:
             logging.error("Connection error: {}".format(e))
@@ -66,8 +63,7 @@ class Store:
 
     def get(self, key):
         if self.db is None:
-            raise ConnectionError("No connection to DB")
-        data = None
+            self.connect()
         data = self.read_from_db(key)
         if data is None:
             raise ValueError("{} key doesn’t exist".format(key))

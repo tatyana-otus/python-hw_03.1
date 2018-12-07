@@ -1,23 +1,10 @@
 import datetime
-import functools
 import unittest
 from datetime import datetime
 
+from tests import helper
+
 from api import api
-
-
-def cases(cases):
-    def decorator(f):
-        @functools.wraps(f)
-        def wrapper(*args):
-            for c in cases:
-                new_args = args + (c if isinstance(c, tuple) else (c,))
-                try:
-                    f(*new_args)
-                except AssertionError as e:
-                    raise AssertionError("{}: {} (test case: {})".format(e, f.__name__, c))
-        return wrapper
-    return decorator
 
 
 class BaseFieldTest(unittest.TestCase):
@@ -42,13 +29,13 @@ class BaseFieldTest(unittest.TestCase):
         self.assertEqual(f.valid(None), False, 'value = None : required=True')
         self.assertEqual(f.valid(""), True, 'value = "" null_value : nullable=True')
 
-    @cases(["111", 111, {}, []])
+    @helper.cases(["111", 111, {}, []])
     def test_field_null_value_nullable_false(self, arg):
         null_values = ["111", 111, {}, []]
         f = api.Field(null_values, required=True, nullable=False)
         self.assertEqual(f.valid(arg), False)
 
-    @cases(["111", 111, {}, []])
+    @helper.cases(["111", 111, {}, []])
     def test_field_null_value_nullable_true(self, arg):
         null_values = ["111", 111, {}, []]
         f = api.Field(null_values, required=True, nullable=True)
@@ -63,12 +50,13 @@ class CharFieldTest(unittest.TestCase):
         f = api.CharField(required=True, nullable=True)
         self.assertEqual(f.valid(""), True, 'value = "": nullable=True')
 
-    @cases(["123", "[123]", "\x00xfsdf-0s09#$%#@*,.]!~{"])
+    @helper.cases(["123", "[123]", "\x00xfsdf-0s09#$%#@*,.]!~{"])
     def test_charfield_valid(self, arg):
         f = api.CharField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), True)
+        self.assertEqual(f.validate(arg), arg)
 
-    @cases([123, [123], 34.89, {"ewe": "qeewr"}])
+    @helper.cases([123, [123], 34.89, {"ewe": "qeewr"}])
     def test_charfield_invalid(self, arg):
         f = api.CharField(required=False, nullable=True)
         self.assertEqual(f.valid(arg), False)
@@ -84,13 +72,14 @@ class ArgumentsFieldTest(unittest.TestCase):
         f = api.ArgumentsField(required=True, nullable=True)
         self.assertEqual(f.valid({}), True, 'value = {}: nullable=True')
 
-    @cases([{1: 1}, {"1": 1}, {"sdfsf": "dsfs"},
-            {"sdfsf": [1, 33], 232: {1: 3, 4: 5}}])
+    @helper.cases([{1: 1}, {"1": 1}, {"sdfsf": "dsfs"},
+                   {"sdfsf": [1, 33], 232: {1: 3, 4: 5}}])
     def test_argumentsfield_valid(self, arg):
         f = api.ArgumentsField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), True)
+        self.assertEqual(f.validate(arg), arg)
 
-    @cases([23, "dsfsdf", [2, 4, 5], 45.6])
+    @helper.cases([23, "dsfsdf", [2, 4, 5], 45.6])
     def test_argumentsfield_invalid(self, arg):
         f = api.ArgumentsField(required=False, nullable=True)
         self.assertEqual(f.valid(arg), False)
@@ -106,12 +95,13 @@ class EmailFieldTest(unittest.TestCase):
         f = api.EmailField(required=True, nullable=True)
         self.assertEqual(f.valid(""), True, 'value = "": nullable=True')
 
-    @cases(["@", "roberthawkins@yahoo.com"])
+    @helper.cases(["@", "roberthawkins@yahoo.com"])
     def test_emailfield_valid(self, arg):
         f = api.EmailField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), True)
+        self.assertEqual(f.validate(arg), arg)
 
-    @cases(["kins.yahoo.com", "123"])
+    @helper.cases(["kins.yahoo.com", "123"])
     def test_emailfield_invalid(self, arg):
         f = api.EmailField(required=False, nullable=True)
         self.assertEqual(f.valid(arg), False)
@@ -128,13 +118,14 @@ class PhoneFieldTest(unittest.TestCase):
         self.assertEqual(f.valid(""), True, 'value = "": nullable=True')
         self.assertEqual(f.valid(0), True, 'value = 0: nullable=True')
 
-    @cases(["71234567890", 71234567890, 70000000000, "77777777777"])
+    @helper.cases(["71234567890", 71234567890, 70000000000, "77777777777"])
     def test_phonefield_valid(self, arg):
         f = api.PhoneField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), True)
+        self.assertEqual(f.validate(arg), str(arg))
 
-    @cases([81234567890, "81234567890", 712345678900, "712345678900", 712345678,
-            "712345678", "+71234567890", "7123456789W", [71234567890], {71234567890}])
+    @helper.cases([81234567890, "81234567890", 712345678900, "712345678900", 712345678,
+                  "712345678", "+71234567890", "7123456789W", [71234567890], {71234567890}])
     def test_phonefield_invalid(self, arg):
         f = api.PhoneField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), False)
@@ -150,14 +141,15 @@ class DateFieldTest(unittest.TestCase):
         f = api.DateField(required=True, nullable=True)
         self.assertEqual(f.valid(""), True, 'value = "": nullable=True')
 
-    @cases(["31.12.1234", "1.1.0001", "31.12.9999", "01.12.9999", "29.02.2000",
-            datetime.today().strftime("%d.%m.%Y")])
+    @helper.cases(["31.12.1234", "1.1.0001", "31.12.9999", "01.12.9999", "29.02.2000",
+                   datetime.today().strftime("%d.%m.%Y")])
     def test_datafield_valid(self, arg):
         f = api.DateField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), True)
+        self.assertEqual(f.validate(arg), datetime.strptime(arg, "%d.%m.%Y"))
 
-    @cases([12122012, "31.06.2018", "10.10.145", "18-11-2018", "18/11/2018",
-            "1a.11.2018", "01.02.06.2018", "01.09"])
+    @helper.cases([12122012, "31.06.2018", "10.10.145", "18-11-2018", "18/11/2018",
+                   "1a.11.2018", "01.02.06.2018", "01.09"])
     def test_datafield_invalid(self, arg):
         f = api.DateField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), False)
@@ -173,12 +165,13 @@ class BirthDayFieldTest(unittest.TestCase):
         f = api.BirthDayField(required=True, nullable=True)
         self.assertEqual(f.valid(""), True, 'value = "": nullable=True')
 
-    @cases(["08.08.1980", datetime.today().strftime("%d.%m.%Y")])
+    @helper.cases(["08.08.1980", datetime.today().strftime("%d.%m.%Y")])
     def test_birthdayfield_valid(self, arg):
         f = api.BirthDayField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), True)
+        self.assertEqual(f.validate(arg), datetime.strptime(arg, "%d.%m.%Y"))
 
-    @cases(["08.08.1880", "08.08.2080"])
+    @helper.cases(["08.08.1880", "08.08.2080"])
     def test_birthdayfield_invalid(self, arg):
         f = api.BirthDayField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), False)
@@ -192,12 +185,13 @@ class GenderFieldTest(unittest.TestCase):
         f = api.GenderField(required=False, nullable=True)
         self.assertEqual(f.valid(None), True, 'value = None: required=False')
 
-    @cases([0, 1, 2])
+    @helper.cases([0, 1, 2])
     def test_genderfield_valid(self, arg):
         f = api.GenderField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), True)
+        self.assertEqual(f.validate(arg), arg)
 
-    @cases([3, -1, 11, "1", [1], 1.0])
+    @helper.cases([3, -1, 11, "1", [1], 1.0])
     def test_genderfield_invalid(self, arg):
         f = api.GenderField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), False)
@@ -213,12 +207,13 @@ class ClientIDsField(unittest.TestCase):
         f = api.ClientIDsField(required=True, nullable=True)
         self.assertEqual(f.valid([]), True, 'value = "": nullable=True')
 
-    @cases([[0, 1], [1], [1, 9, 67, 1, 1, 6], [0, 0, 0]])
+    @helper.cases([[0, 1], [1], [1, 9, 67, 1, 1, 6], [0, 0, 0]])
     def test_clientidsfield_valid(self, arg):
         f = api.ClientIDsField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), True)
+        self.assertEqual(f.validate(arg), arg)
 
-    @cases([[0, -1], [0, "1"], {0, 1}, 1, "0 1 2"])
+    @helper.cases([[0, -1], [0, "1"], {0, 1}, 1, "0 1 2"])
     def test_clientidsfield_invalid(self, arg):
         f = api.ClientIDsField(required=True, nullable=False)
         self.assertEqual(f.valid(arg), False)
