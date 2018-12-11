@@ -58,7 +58,6 @@ class Store:
                     attempts -= 1
                     if attempts == 0:
                         raise ConnectionError("Can't connect to DB")
-            return result
         return wrapper
 
     def get(self, key):
