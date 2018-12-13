@@ -78,19 +78,41 @@ class TestSuiteStoreOk(unittest.TestCase):
 class TestSuiteStoreDown(unittest.TestCase):
 
     def setUp(self):
-        self.store = store.Store(redis_up_config, reconnect_attempts=5)
+        self.store = store.Store(redis_up_config, reconnect_attempts=5, connect_now=False)
 
     def test_store_connect(self):
         with self.assertRaises(ConnectionError):
             self.store.connect()
 
     @helper.cases([("key_0", "111"), ("key_1", 4), ("key_2", "asasa")])
-    def test_store_cache_set_get(self, key, value):
+    def test_store_cache_set_without_connect(self, key, value):
+        with self.assertRaises(TypeError):
+            self.store.cache_set(key, value, 1)
+
+    @helper.cases(["key_0", "key_1", "key_2"])
+    def test_store_cache_get_without_connect(self, key):
+        with self.assertRaises(TypeError):
+            self.store.cache_get(key)
+
+    def test_store_get_without_connect(self):
+        with self.assertRaises(TypeError):
+            self.store.get("key_0")
+
+    @helper.cases([("key_0", "111"), ("key_1", 4), ("key_2", "asasa")])
+    def test_store_cache_set_get_with_connect(self, key, value):
+        try:
+            self.store.connect()
+        except ConnectionError:
+            pass
         self.store.cache_set(key, value, 1)
         result = self.store.cache_get(key)
         self.assertEqual(result, None)
 
-    def test_store_get(self):
+    def test_store_get_with_connect(self):
+        try:
+            self.store.connect()
+        except ConnectionError:
+            pass
         with self.assertRaises(ConnectionError):
             self.store.get("key_0")
 

@@ -128,7 +128,7 @@ class TestSuiteApiInvalidRequests(unittest.TestCase):
     def setUp(self):
         self.context = {}
         self.headers = {}
-        self.store = store.Store(redis_config, reconnect_attempts=5)
+        self.store = MockStore()
 
     def get_response(self, request):
         return api.method_handler({"body": request, "headers": self.headers},
